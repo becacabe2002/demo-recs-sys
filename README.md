@@ -1,35 +1,4 @@
 # The MovieGEEK Installation Guide
-
-The MovieGEEK is a website initially implemented to accompany my book, Practical Recommender Systems. 
-However, this folder is used for the manning LiveProject, which is currently in MEAP. 
- 
-The website is not intended as a standalone tutorial or a plug-and-play website for you to install and 
-use for your content. 
-
-## Thanks!
-This site would not be working if it wasn’t for the [MovieTweetings](https://github.com/sidooms/MovieTweetings) 
-dataset and the poster images provided by the [themoviedb.org](https://www.themoviedb.org) API. 
-I wish to extend a big thanks to both of them for all their work.
-
-## Project Setup
-In the following, we will go through the steps to set up this site. 
-
-The first thing is to download this repository. Secondly, create a themoviedb.org ID needed to run the website. 
-
-### Download source code
-You have two choices for downloading the source code – downloading a zip file of the source code or using Git. 
-
-* *Downloading a zip file*
- 
-   From the main [MovieGEEK directory on GitHub](https://github.com/practical-recommender-systems/moviegeek), 
-   click the green “Clone or download” button and choose to download a zip file to your computer.
-   
-* *Using Git*
-
-   Clone this repository or create a fork in your GitHub, and then clone that instead. The following command 
-   will create a copy on your computer.
-   `> git clone https://github.com/kimfalk/live-project.git`
-
  
 ###  Create an ID for themoviedb.org
 
