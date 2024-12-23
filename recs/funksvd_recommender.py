@@ -14,7 +14,7 @@ from recs.base_recommender import base_recommender
 
 class FunkSVDRecs(base_recommender):
 
-    def __init__(self, save_path='./models/funkSVD/2024-12-20 14:35:33.280840/model/'):
+    def __init__(self, save_path='./models/funkSVD/'):
         self.save_path = save_path
         self.model_loaded = False
         self.avg = Decimal(list(Rating.objects.all().aggregate(Avg('rating')).values())[0])
@@ -46,6 +46,45 @@ class FunkSVDRecs(base_recommender):
             return 0
         else:
             return rec.rating
+
+    def predict_score_by_rating(self, item_id, active_user_items):
+        """
+        Predict the score for a given movie (item_id) based on the active user's rating history.
+        Uses collaborative filtering approach to estimate the score.
+        """
+
+        if not self.model_loaded:
+            self.load_model(self.save_path)
+
+        rated_movies = {}
+        
+        if isinstance(active_user_items, list) and isinstance(active_user_items[0], dict):
+            rated_movies = {movie['movie_id']: movie['rating'] for movie in active_user_items}
+        elif hasattr(active_user_items, 'values'):  # For Django querysets
+            rated_movies = {movie['movie_id']: movie['rating'] for movie in active_user_items.values('movie_id', 'rating')}
+        else:
+            print("Unexpected structure for active_user_items:", active_user_items)
+        
+        top = Decimal(0.0)
+        bottom = Decimal(0.0)
+
+        if str(self.user_factors.columns) in active_user_items:
+            user = self.user_factors[str(item_id)]
+
+        for movie_id, rating in rated_movies.items():
+            sim_item = self.item_factors.T.dot(user)
+            
+            similarity = sim_item.get(movie_id, Decimal(0.0))
+            
+            if similarity != Decimal(0):
+                top += similarity * rating
+                bottom += similarity
+
+        if bottom == Decimal(0):
+            return 0
+
+        predicted_score = Decimal(top / bottom) + self.avg
+        return predicted_score
 
     def recommend_items(self, user_id, num=6):
 

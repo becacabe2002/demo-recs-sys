@@ -98,15 +98,15 @@ class LdaModel(object):
 
             stopped_tokens = self.remove_stopwords(tokens)
 
-            stemmed_tokens = stopped_tokens
+            #stemmed_tokens = stopped_tokens
             #stemmer = PorterStemmer()
             #stemmed_tokens = [stemmer.stem(token) for token in stopped_tokens]
 
-            texts.append(stemmed_tokens)
+            texts.append(stopped_tokens)
 
         dictionary = corpora.Dictionary(texts)
 
-        corpus = [dictionary.doc2bow(text) for text in texts]
+        corpus = [dictionary.doc2bow(text) for text in texts] # bow = Bag of Words
 
         lda_model = models.ldamodel.LdaModel(corpus=corpus, id2word=dictionary,
                                                  num_topics=n_topics)

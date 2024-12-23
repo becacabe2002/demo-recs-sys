@@ -8,7 +8,6 @@ django.setup()
 
 import logging
 from decimal import Decimal
-from tqdm import tqdm
 
 
 
@@ -44,7 +43,7 @@ class MeanAverageError(object):
             if len(this_test_ratings) > 0:
 
                 movie_ids = this_test_ratings['movie_id'].unique()
-                for item_id in tqdm(movie_ids):
+                for item_id in movie_ids:
                     actual_rating = this_test_ratings[this_test_ratings['movie_id'] == item_id].iloc[0]['rating']
                     predicted_rating = self.rec.predict_score_by_ratings(item_id, movies)
 
@@ -56,12 +55,12 @@ class MeanAverageError(object):
                 if num_movies > 0:
                     error += user_error / num_movies
 
-                    print(
-                        "AE userid:{}, test_ratings:{} predicted {} error {}".format(user_id,
-                                                                                     len(this_test_ratings),
-                                                                                     num_movies,
-                                                                                     user_error / num_movies))
-
+                    # print(
+                    #     "AE userid:{}, test_ratings:{} predicted {} error {}".format(user_id,
+                    #                                                                  len(this_test_ratings),
+                    #                                                                  num_movies,
+                    #                                                                  user_error / num_movies))
+                    #
         return error / len(user_ids)
 
 

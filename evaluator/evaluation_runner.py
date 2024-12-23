@@ -231,7 +231,7 @@ def evaluate_cf_recommender():
         for k in np.arange(0, 20, 2):
             min_rank = min_number_of_ratings / 2
             recommender = NeighborhoodBasedRecs()
-            er = EvaluationRunner(0,
+            er = EvaluationRunner(2,
                                   ItemSimilarityMatrixBuilder(min_overlap, min_sim=min_sim),
                                   recommender,
                                   k)
@@ -327,20 +327,20 @@ def evaluate_funksvd_recommender():
     file_name = '{}-funksvd-k.csv'.format(timestr)
 
     with open(file_name, 'a', 1) as logfile:
-        logfile.write("rak,pak,mae,k\n")
+        logfile.write("ar-k,map-k,mae,k\n")
 
         builder = MatrixFactorization(save_path)
 
         for k in np.arange(0, 20, 2):
 
-            recommender = FunkSVDRecs(save_path + 'model/')
+            recommender = FunkSVDRecs(save_path)
 
             er = EvaluationRunner(0,
                                   builder,
                                   recommender,
                                   k,
                                   params={'k': 20,
-                                          'save_path': save_path + 'model/'})
+                                          'save_path': save_path})
 
             result = er.calculate(20, 10)
             builder = None

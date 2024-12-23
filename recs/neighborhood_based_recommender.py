@@ -5,6 +5,7 @@ from django.db.models import Q
 import time
 
 from decimal import Decimal
+from decimal import getcontext
 
 
 class NeighborhoodBasedRecs(base_recommender):
@@ -13,6 +14,7 @@ class NeighborhoodBasedRecs(base_recommender):
         self.neighborhood_size = neighborhood_size
         self.min_sim = min_sim
         self.max_candidates = 100
+        getcontext().prec = 10
 
     def recommend_items(self, user_id, num=6):
 
@@ -47,7 +49,7 @@ class NeighborhoodBasedRecs(base_recommender):
 
             if len(rated_items) > 1:
                 for sim_item in rated_items:
-                    r = Decimal(movie_ids[sim_item.source] - user_mean)
+                    r = Decimal(movie_ids[sim_item.source]) - Decimal(user_mean)
                     pre += sim_item.similarity * r
                     sim_sum += sim_item.similarity
                 if sim_sum > 0:

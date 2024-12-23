@@ -191,7 +191,7 @@ def main():
     Log.objects.all().delete()
     random.seed(SEED)
 
-    number_of_events = 100000
+    number_of_events = 10000
 
     print("Generating Data")
     users = [
@@ -201,6 +201,7 @@ def main():
         User(400004, 100, 0, 0),
         User(400005, 0, 100, 0),
         User(400006, 0, 0, 100),
+        User(44690691703, 20, 20, 60),
     ]
     print("Simulating " + str(len(users)) + " visitors")
 

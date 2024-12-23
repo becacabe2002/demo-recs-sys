@@ -94,12 +94,13 @@ class MatrixFactorization(object):
             prediction = 10
         return prediction
 
-    def build(self, ratings, params):
-
+    def build(self, ratings, params=None):
+        
         if params:
             k = params['k']
             self.save_path = params['save_path']
-
+        else:
+            k = 10
         self.train(ratings, k)
 
     def split_data(self, min_rank, ratings):
@@ -181,7 +182,7 @@ class MatrixFactorization(object):
         squared = np.apply_along_axis(difference, 1, ratings).sum()
         return math.sqrt(squared / ratings.shape[0])
 
-    def train(self, ratings_df, k=40):
+    def train(self, ratings_df, k=20):
 
         self.initialize_factors(ratings_df, k)
         self.logger.info("training matrix factorization at {}".format(datetime.now()))
@@ -260,7 +261,7 @@ class MatrixFactorization(object):
 
     def save(self, factor, finished):
 
-        save_path = self.save_path + '/model/'
+        save_path = self.save_path
         if not finished:
             save_path += str(factor) + '/'
 
@@ -319,7 +320,7 @@ if __name__ == '__main__':
     logger = logging.getLogger('funkSVD')
     logger.info("[BEGIN] Calculating matrix factorization")
 
-    MF = MatrixFactorization(save_path='./models/funkSVD/{}/'.format(datetime.now()), max_iterations=40)
+    MF = MatrixFactorization(save_path='./models/funkSVD/', max_iterations=40)
     loaded_ratings = load_all_ratings(20)
     logger.info("using {} ratings".format(loaded_ratings.shape[0]))
     #MF.meta_parameter_train(loaded_ratings)
