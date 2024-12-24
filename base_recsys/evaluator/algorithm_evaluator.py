@@ -49,7 +49,7 @@ class MeanAverageError(object):
 
                     if actual_rating > 0 and predicted_rating > 0:
                         num_movies += 1
-                        item_error = abs(actual_rating - predicted_rating)
+                        item_error = abs(actual_rating - Decimal(predicted_rating))
                         user_error += item_error
 
                 if num_movies > 0:

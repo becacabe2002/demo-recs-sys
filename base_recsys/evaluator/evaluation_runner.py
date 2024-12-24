@@ -17,7 +17,7 @@ from builder.matrix_factorization_calculator import MatrixFactorization
 from evaluator.algorithm_evaluator import PrecisionAtK, MeanAverageError
 from recs.bpr_recommender import BPRRecs
 from recs.content_based_recommender import ContentBasedRecs
-from recs.funksvd_recommender import FunkSVDRecs
+from recs.basemf_recommender import BaseMFRecs
 from recs.fwls_recommender import FeatureWeightedLinearStacking
 from recs.neighborhood_based_recommender import NeighborhoodBasedRecs
 from recs.popularity_recommender import PopularityBasedRecs
@@ -320,11 +320,14 @@ def evaluate_fwls_recommender():
             logfile.flush()
 
 
-def evaluate_funksvd_recommender():
-    save_path = './models/funkSVD/'
+def evaluate_basemf_recommender():
+    save_path = './models/baseMF/'
+    log_dir = './logs/' 
+    os.makedirs(log_dir, exist_ok=True)
+
     K = 20
     timestr = time.strftime("%Y%m%d-%H%M%S")
-    file_name = '{}-funksvd-k.csv'.format(timestr)
+    file_name = os.path.join(log_dir, '{}-basemf-k.csv'.format(timestr))
 
     with open(file_name, 'a', 1) as logfile:
         logfile.write("ar-k,map-k,mae,k\n")
@@ -333,7 +336,7 @@ def evaluate_funksvd_recommender():
 
         for k in np.arange(0, 20, 2):
 
-            recommender = FunkSVDRecs(save_path)
+            recommender = BaseMFRecs(save_path)
 
             er = EvaluationRunner(0,
                                   builder,
@@ -401,7 +404,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Evaluate recommender algorithms.')
     parser.add_argument('-fwls', help="run evaluation on fwls rec", action="store_true")
-    parser.add_argument('-funk', help="run evaluation on funk rec", action="store_true")
+    parser.add_argument('-basemf', help="run evaluation on basemf rec", action="store_true")
     parser.add_argument('-cf', help="run evaluation on cf rec", action="store_true")
     parser.add_argument('-cb', help="run evaluation on cb rec", action="store_true")
     parser.add_argument('-ltr', help="run evaluation on rank rec", action="store_true")
@@ -425,9 +428,9 @@ if __name__ == '__main__':
         logger.debug("evaluating ltr")
         evaluate_bpr_recommender()
 
-    if args.funk:
-        logger.debug("evaluating funk")
-        evaluate_funksvd_recommender()
+    if args.basemf:
+        logger.debug("evaluating basemf")
+        evaluate_basemf_recommender()
 
     if args.pop:
         logger.debug("evaluating popularity")

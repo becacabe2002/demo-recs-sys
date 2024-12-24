@@ -12,7 +12,7 @@ from moviegeeks.models import Movie
 from recommender.models import SeededRecs
 from recs.bpr_recommender import BPRRecs
 from recs.content_based_recommender import ContentBasedRecs
-from recs.funksvd_recommender import FunkSVDRecs
+from recs.basemf_recommender import BaseMFRecs
 from recs.fwls_recommender import FeatureWeightedLinearStacking
 from recs.neighborhood_based_recommender import NeighborhoodBasedRecs
 from recs.popularity_recommender import PopularityBasedRecs
@@ -179,8 +179,8 @@ def recs_fwls(request, user_id, num=6):
     }
     return JsonResponse(data, safe=False)
 
-def recs_funksvd(request, user_id, num=6):
-    sorted_items = FunkSVDRecs().recommend_items(user_id, num)
+def recs_basemf(request, user_id, num=6):
+    sorted_items = BaseMFRecs().recommend_items(user_id, num)
 
     data = {
         'user_id': user_id,
