@@ -11,11 +11,14 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=pw1234
       - POSTGRES_DB=moviegeeks
+  
   sec-rec:
-    restart: always
-    build: .
+    restart: no
+    build:
+      context: .
+      dockerfile: Dockerfile.recsys
     command: python manage.py runserver 0.0.0.0:8010
-    mem_limit: 8G
+    mem_limit: 3G
     cpus: "2"
     volumes:
       - .:/code
@@ -25,8 +28,24 @@ services:
       - djangonetwork
     links:
       - sec-db:db
+      - csp:csp
     depends_on:
       - sec-db
+      - csp
+  
+  csp:
+    build:
+      context: .
+      dockerfile: Dockerfile.csp
+    command: python csp_server.py
+    mem_limit: 5GB
+    cpus: "4"
+    volumes:
+      - ./csp:/code
+    ports:
+      - "5000:5000"
+    networks:
+      - djangonetwork
 
 networks:
     djangonetwork:
