@@ -50,6 +50,7 @@ sklearn==0.0
 smart-open==7.0.5
 sqlparse==0.5.3
 stop-words==2015.2.23.1
+sympy==1.13.3
 tenseal==0.3.15
 threadpoolctl==3.5.0
 tomli==2.2.1

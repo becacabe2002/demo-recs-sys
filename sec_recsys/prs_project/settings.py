@@ -80,7 +80,7 @@ DATABASES = {
         'NAME': 'moviegeeks',
         'USER': 'postgres',
         'PASSWORD': 'pw1234',
-        'HOST': 'base_recsys-base-db-1',
+        'HOST': 'sec_recsys-sec-db-1',
         'PORT': 5432
     }
 }
