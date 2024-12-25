@@ -20,7 +20,7 @@ class KeyManager:
         self.sec_key = self.context.secret_key()
         return {
             "pub_key": self.pub_key.hex(),
-            "galois_keys": self.context.galois_keys().hex()
+            "galois_keys": str(self.context.galois_keys())
         }
 
     def decrypt(self, enc_data):

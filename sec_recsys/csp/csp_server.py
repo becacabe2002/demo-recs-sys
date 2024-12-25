@@ -1,13 +1,29 @@
 from flask import Flask, request, jsonify
+from json import JSONEncoder
 import numpy as np
 from utils.crt import CrtEnc
 from key_manager import KeyManager
 from operations import SecureOps
+import tenseal as ts
+
+class CustomJSONEncoder(JSONEncoder):
+    def default(self, o):
+        if isinstance(o, (np.ndarray, list)):
+            return [float(x) for x in o]
+        if isinstance(o, ts.CKKSTensor):
+            ciphertexts = [ct.serialize().hex() for ct in obj]
+            return ciphertexts
+        if isinstance(o, bytes):
+            return o.hex()
+        return super().default(o)
 
 app = Flask(__name__)
 key_manager = KeyManager()
 crt_enc = CrtEnc()
 sec_ops = SecureOps(crt_enc)
+
+
+app.json_encoder = CustomJSONEncoder
 
 @app.route('/init', methods=['POST'])
 def initialize():
@@ -22,7 +38,7 @@ def proccess_ratings():
     proccessed_data = sec_ops.process_rating(enc_ratings, masks)
     return jsonify({
         "status": "success",
-        "proccessed_data": proccessed_data
+        "processed_data": proccessed_data
         })
 
 @app.route('/fixed_point_ops', methods=['POST'])
@@ -44,7 +60,7 @@ def check_conv():
     conv = sec_ops.check_convergence(grads, thres)
     return jsonify({
         "status": "success",
-        "converaged": conv
+        "converged": conv
         })
 
 if __name__ == '__main__':

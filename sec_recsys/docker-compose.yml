@@ -42,6 +42,7 @@ services:
     cpus: "4"
     volumes:
       - ./csp:/code
+      - ./utils:/code/utils
     ports:
       - "5000:5000"
     networks:

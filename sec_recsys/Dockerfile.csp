@@ -1,7 +1,9 @@
 FROM python:3.8
 ENV PYTHONUNBUFFERED 1
 RUN mkdir /code
+RUN mkdir /code/utils
 WORKDIR /code
 COPY csp/requirements.txt /code/
 RUN pip install -r requirements.txt
 COPY csp/ /code/
+COPY utils/ /code/utils/
