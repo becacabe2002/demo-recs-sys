@@ -5,44 +5,57 @@ from utils.new_gd_ds import GradDataStruct
 import tenseal as ts
 
 class SecureOps:
-    def __init__(self, crt_enc):
+    def __init__(self, key_manager, crt_enc):
+        self.key_manager = key_manager
         self.crt_enc = crt_enc
-        self.grad_struct = GradDataStruct(dimension=20)
+        self.grad_struct = None
 
-    def process_rating(self, enc_ratings, masks):
+    def process_rating(self, masked_data):
         '''
         Proccess masked and encrypted rating to create initial structure
         '''
-        dec_ratings = []
-        for enc_rating, mask in zip(enc_ratings, masks):
-            cts = [ts.ckks_tensor_from(self.crt_enc.contexts[i], bytes.fromhex(ct_hex))
-                for i, ct_hex in enumerate(enc_rating['ciphertext'])
-                   ]
-            ct = self.crt_enc.dec_crt(cts)
-            um = (ct - mask['value']) % (1 << self.crt_enc.bit_size)
-            dec_ratings.append({
-                'user_id': enc_rating['user_id'],
-                'item_id': enc_rating['item_id'],
-                'rating': um
-                })
-
         if not self.grad_struct:
             self.grad_struct = GradDataStruct(dimension=20)
             for r in dec_ratings:
                 self.grad_struct.add_rating(r['user_id'], r['item_id'])
             self.grad_struct.finalize()
+        
+        rating_vecs = []
+        indicator_vecs = []
+
+        for item in masked_data:
+            # decrypt rating and indicator with AHE
+            dec_rating = self.key_manager.decrypt_ahe(item['masked_rating'])
+            dec_indicator = self.key_manager.decrypt_ahe(item['masked_indicator'])
+        
+            rating_dvec = np.zeros(self.grad_struct.dimension)
+            rating_dvec[0] = -dec_rating
+            rating_vecs.append(rating_dvec)
+
+            indicator_dvec = np.full(self.grad_struct.dimension, dec_indicator)
+            indicator_vecs.append(indicator_dvec)
+
+        concatenated_ratings = np.concatenate(rating_vecs)
+        concatenated_indicators = np.concatenate(indicator_vecs)
+
+        # encrypt with CRT-CKKS
+        enc_ratings = self.crt_enc.enc_crt(concatenated_ratings)
+        enc_indicators = self.crt_enc.enc_crt(concatenated_indicators)
 
         return {
-                'grad_struct': {
-                    'dimension': self.grad_struct.dimension,
-                    'M': self.grad_struct.M,
-                    'MI': list(self.grad_struct.MI),  # Convert set to list
-                    'MJ': list(self.grad_struct.MJ),  # Convert set to list
-                    'user_index_map': self.grad_struct.user_index_map,
-                    'item_index_map': self.grad_struct.item_index_map
-                },
-                'processed_ratings': dec_ratings
-                }
+        'vectors':{
+            'ratings': [ct.serialize().hex() for ct in enc_ratings],
+            'indicators': [ct.serialize().hex() for ct in enc_indicators]
+            }, 
+        'grad_struct': {
+            'dimension': self.grad_struct.dimension,
+            'M': self.grad_struct.M,
+            'MI': list(self.grad_struct.MI),  # Convert set to list
+            'MJ': list(self.grad_struct.MJ),  # Convert set to list
+            'user_index_map': self.grad_struct.user_index_map,
+            'item_index_map': self.grad_struct.item_index_map
+            }
+        }
 
     def fixed_point_compute(self, vecs, op):
         '''
