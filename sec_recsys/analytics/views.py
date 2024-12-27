@@ -1,7 +1,16 @@
 import decimal
 import json
 import time
+import os
+import requests
+from typing import Dict, List
 from datetime import datetime
+
+from rest_framework import viewsets
+from rest_framework.response import Response
+from rest_framework.decorators import action
+
+import numpy as np
 
 from django.db import connection
 from django.db.models import Count
@@ -13,6 +22,108 @@ from analytics.models import Rating, Cluster
 from collector.models import Log
 from moviegeeks.models import Movie, Genre
 from recommender.models import SeededRecs, Similarity
+from django.conf import settings
+from django.db import transaction
+
+class SecureRatingViewSet(viewsets.ModelViewSet):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.matrix_path = os.path.join(settings.BASE_DIR, 'models', 'sec_mf')
+        os.makedirs(self.matrix_path, exist_ok=True)
+
+    def generate_masks(self, num_ratings):
+        '''
+        Generate masks for ratings and indicators
+        '''
+        masks = []
+        for _ in range(num_ratings):
+            masks.append({
+                'r_mask': np.random.randint(0, 2**36),
+                'i_mask': np.random.randint(0,2)
+                })
+        return masks
+
+    def remove_masks_from_vecs(self, enc_vecs, masks):
+        ratings_vecs = []
+        for vec_hex in enc_vecs['ratings']:
+            vec_bytes = bytes.fromhex(vec_hex)
+            vec_int = int.from_bytes(vec_bytes, 'big')
+
+            # remove mask from first element
+            for m in masks:
+                vec_int += m['r_mask']
+            ratings_vecs.append(vec_int)
+
+        indicator_vecs = []
+        for vec_hex in enc_vecs['indicators']:
+            vec_bytes = bytes.formhex(vec_hex)
+            vec_int = int.from_bytes(vec_bytes, 'big')
+            for m in masks:
+                vec_int -= masks['i_mask']
+            indicator_vecs.append(vec_int)
+        
+        return {
+            'ratings': ratings_vecs,
+            'indicators': indicator_vecs
+            }
+
+    @action(detail=False, methods=['POST'])
+    @transaction.atomic
+    def upload_enc(self, request):
+        enc_ratings = request.data['ratings']
+        masks = self.generate_masks(len(enc_ratings))
+        
+        masked_data = []
+
+        for r,m in zip(enc_ratings, masks):
+            masked_data.append({
+                'user_id': r['user_id'],
+                'item_id': r['item_id'],
+                'masked_rating': r['rating'] + m['r_mask'],
+                'masked_indicator': r['indicator'] + m['i_mask']
+                })
+
+        csp_resp = requests.post(
+                f"{settings.CSP_URL}/process_ratings",
+                json={
+                    'masked_data': masked_data
+                    }
+                )
+        
+        if not csp_resp.ok:
+            return Response({'status': 'error'}, status=400)
+
+        processed_data = csp_resp.json()['processed_data']
+    
+        unmasked_vecs = self.remove_masks_from_vecs(processed_data['vectors'], masks)
+        
+        self.store_ratings(masked_data, unmasked_vecs)
+
+        self.init_matrices(processed_data['grad_struct'])
+
+        return Response({'status':'success'})
+
+    def store_ratings(masked_data, unmasked_vecs):
+        ratings = []
+        for data, r, i in zip(masked_data, unmasked_vecs['ratings'], unmasked_vecs['indicators']):
+            if i == 1:
+                ratings.append(
+                    Rating(
+                        user_id=data['user_id'],
+                        movie_id=data['item_id'],
+                        enc_rating=r
+                        ))
+        Rating.objects.bulk_create(ratings)
+
+    def init_matrices(grad_struct):
+        '''
+        Initialize U, V, U_hat and V_hat
+        '''
+        dimension = grad_struct['dimension']
+        num_users = grad_struct['MI']
+        num_items = grad_struct['MJ']
+
+        U = np.random.normal(0, 0.1, (num_users, dimension))
 
 def index(request):
     context_dict = {}
